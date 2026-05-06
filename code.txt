@@ -27,16 +27,58 @@ class VectorStore:
     def search(self,query_vector,top_k=3):
         result = self.collection.query(query_embeddings=[query_vector],n_results=top_k)
         return result["documents"][0] if result["documents"] else []
+
+def reciprocal_rank_fusion(bm25_chunks, chroma_chunks, k=60):
+    scores = {}
+
+    for rank, chunk in enumerate(bm25_chunks):
+        scores[chunk] = scores.get(chunk, 0) + 1 / (rank + k)
+
+    for rank, chunk in enumerate(chroma_chunks):
+        scores[chunk] = scores.get(chunk, 0) + 1 / (rank + k)
+
+    # sort by highest score
+    return sorted(scores, key=scores.get, reverse=True)
+
+from rank_bm25 import BM25Okapi
+import re
+class BM25Search:
+    def __init__(self):
+        self.bm25 = None
+        self.chunks = []
+    def build(self,chunks):
+        self.chunks = chunks
+        tokenized = [re.findall(r'\b\w+\b', chunk.lower()) for chunk in chunks]
+        self.bm25 = BM25Okapi(tokenized)
+    def search(self, query, top_k=3):
+        if self.bm25 is None:
+            return []
+
+        query_tokens = query.lower().split()
+        scores = self.bm25.get_scores(query_tokens)
+
+        top_indices = sorted(range(len(scores)),key=lambda i: scores[i],reverse=True)
+
+        # ✅ FILTER chunks containing query words
+        filtered = []
+        for i in top_indices:
+            chunk = self.chunks[i].lower()
+            if all(q in chunk for q in query_tokens):
+                filtered.append(self.chunks[i])
+            if len(filtered) == top_k:
+                break
+        print("BM25 filtered:", filtered)
+        return filtered if filtered else [self.chunks[i] for i in top_indices[:top_k]]
 from nltk.corpus import stopwords
 from math import sqrt
-#nltk.download("stopwords")
-
+import re
 class DocumentLoader():
     def __init__(self,vector_store):
         self.chunks = []
         self.embedded_chunks = []
         self.text = ""
         self.vector_store = vector_store
+        self.bm25 = BM25Search()
         
     # Change this line in your loader class:
     def load_file(self, path):
@@ -44,16 +86,24 @@ class DocumentLoader():
             self.text = f.read()
         return self.text
     
-    def chunks_creation(self, size=200, overlap=50):
+    def chunks_creation(self, size=500, overlap=100):
+        sentences = re.split(r'(?<=[.!?]) +', self.text)
         self.chunks = []
-        start = 0
-        while start < len(self.text):
-            self.chunks.append(self.text[start:start+size])
-            start += size - overlap
+        chunk = ""
+        for sentence in sentences:
+            if len(chunk.split()) + len(sentence.split()) <= size:
+                chunk += " " + sentence
+            else:
+                self.chunks.append(chunk.strip())
+                chunk = sentence
+        if chunk:
+            self.chunks.append(chunk.strip())   
         return self.chunks
     
     def embed_all_chunks(self,embed_fn):
         self.vector_store.add_chunks(self.chunks,embed_fn)
+        self.bm25.build(self.chunks)
+        
     
     def top_3_chunks(self,qurey_vector):
         return self.vector_store.search(qurey_vector,top_k=3)
@@ -82,6 +132,7 @@ class ChatMemory:
         self.loader = DocumentLoader(self.vector_store)
         self.path = path
         self.doc_text = ''
+        
    
     # ---------------- NORMALIZE ----------------
     def normalize(self, text):
@@ -95,7 +146,7 @@ class ChatMemory:
         )["embedding"]
 
     # ---------------- DOCUMENT ----------------
-    def prepare_document(self, path, size=200, overlap=50):
+    def prepare_document(self, path, size=1000, overlap=10):
         self.loader.load_file(path)
         self.loader.chunks_creation(size, overlap)
         self.loader.embed_all_chunks(self.embed)
@@ -105,13 +156,21 @@ class ChatMemory:
     def retrive_context(self,user_text):
         
         embedded_user = self.embed(user_text)
-        top_chunks = self.loader.top_3_chunks(embedded_user)
+        chroma_chunks  = self.loader.top_3_chunks(embedded_user)
+        bm25_chunks = self.loader.bm25.search(user_text, top_k=3)
+
+        print("BM25 Chunks:", bm25_chunks)
+        print("Chroma Chunks:", chroma_chunks)
+        
+        merged = reciprocal_rank_fusion(bm25_chunks, chroma_chunks)
+        top_chunks = merged[:3]
         if not top_chunks:
             return "No Context Found"
         
         combined = " ".join (top_chunks)
-        if len(combined.split())<15:
-            return "No Context Found"
+        # if len(combined.split())<15:
+        #     return "No Context Found"
+        print("DEBUG:", top_chunks)
         return "\n\n".join(top_chunks)
     
     # ---------------- TOKEN ----------------
@@ -286,7 +345,8 @@ class ChatMemory:
             
         self.add_assistant(reply)
         return reply 
-agent function
+    
+## agent function
 import math
 #--------------------------------------------------------------------------------------------------------------------------------------------
 #TOOL 1: search document
@@ -341,9 +401,10 @@ TOOLS = {
 }
 memory = ChatMemory()
 memory.prepare_document(
-    path=r"E:\training\LLM_training\output.txt",
+    path=r"E:\training\LLM_training\output.md",
     size=200,
     overlap=50)
+#print("BM25 result:", memory.loader.bm25.search("binary search"))
 # memory.loader.embed_all_chunks(model='qwen2.5')
 #print(memory.retrive_context("binary search"))
 while True:
