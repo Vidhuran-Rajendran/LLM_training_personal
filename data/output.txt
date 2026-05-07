@@ -1,0 +1,383 @@
+Linked Lists
+Linked lists can be thought of from a high level perspective as being a series
+of nodes. Each node has at least a single pointer to the next node, and in the
+last node's case a null pointer representing that there are no more nodes in the
+linked list.
+In DSA our implementations of linked lists always maintain head and tail
+pointers so that insertion at either the head or tail of the list is a constant
+time operation. Random insertion is excluded from this and will be a linear
+operation. As such, linked lists in DSA have the following characteristics:
+1. Insertion is O(1)
+2. Deletion is O(n)
+3. Searching is O(n)
+Out of the three operations the one that stands out is that of insertion. In
+DSA we chose to always maintain pointers (or more aptly references) to the
+node(s) at the head and tail of the linked list and so performing a traditional
+insertion to either the front or back of the linked list is an O(1) operation. An
+exception to this rule is performing an insertion before a node that is neither
+the head nor tail in a singly linked list. When the node we are inserting before
+is somewhere in the middle of the linked list (known as random insertion) the
+complexity is O(n). In order to add before the designated node we need to
+traverse the linked list to ¯nd that node's current predecessor. This traversal
+yields an O(n) run time.
+This data structure is trivial, but linked lists have a few key points which at
+times make them very attractive:
+1. the list is dynamically resized, thus it incurs no copy penalty like an array
+or vector would eventually incur; and
+2. insertion is O(1).
+2.1 Singly Linked List
+Singly linked lists are one of the most primitive data structures you will ¯nd in
+this book. Each node that makes up a singly linked list consists of a value, and
+a reference to the next node (if any) in the list.
+2.1.1 Insertion
+In general when people talk about insertion with respect to linked lists of any
+form they implicitly refer to the adding of a node to the tail of the list. When
+you use an API like that of DSA and you see a general purpose method that
+adds a node to the list, you can assume that you are adding the node to the tail
+of the list not the head.
+2.1.2 Searching
+Searching a linked list is straightforward: we simply traverse the list checking
+the value we are looking for with the value of each node in the linked list. The
+algorithm listed in this section is very similar to that used for traversal
+2.1.3 Deletion
+Deleting a node from a linked list is straightforward but there are a few cases
+we need to account for:
+1. the list is empty; or
+2. the node to remove is the only node in the linked list; or
+3. we are removing the head node; or
+4. we are removing the tail node; or
+5. the node to remove is somewhere in between the head and tail; or
+6. the item to remove doesn't exist in the linked list
+The algorithm whose cases we have described will remove a node from any-
+where within a list irrespective of whether the node is the head etc. If you know
+that items will only ever be removed from the head or tail of the list then you
+can create much more concise algorithms. In the case of always removing from
+the front of the linked list deletion becomes an O(1) operation.
+2.1.5 Traversing the list in reverse order
+Traversing a singly linked list in a forward manner (i.e. left to right) is simple
+as demonstrated in x2.1.4. However, what if we wanted to traverse the nodes in
+the linked list in reverse order for some reason? The algorithm to perform such
+a traversal is very simple, and just like demonstrated in x2.1.3 we will need to
+acquire a reference to the predecessor of a node, even though the fundamental
+characteristics of the nodes that make up a singly linked list make this an
+expensive operation. For each node, ¯nding its predecessor is an O(n) operation,
+so over the course of traversing the whole list backwards the cost becomes O(n2).
+Doubly Linked List
+Doubly linked lists are very similar to singly linked lists. The only di®erence is
+that each node has a reference to both the next and previous nodes in the list.
+Reverse Traversal
+Singly linked lists have a forward only design, which is why the reverse traversal
+algorithm de¯ned in x2.1.5 required some creative invention. Doubly linked lists
+make reverse traversal as simple as forward traversal (de¯ned in x2.1.4) except
+that we start at the tail node and update the pointers in the opposite direction.
+Figure 2.6 shows the reverse traversal algorithm in action.
+Summary
+Linked lists are good to use when you have an unknown number of items to
+store. Using a data structure like an array would require you to specify the size
+up front; exceeding that size involves invoking a resizing algorithm which has
+a linear run time. You should also use linked lists when you will only remove
+nodes at either the head or tail of the list to maintain a constant run time.
+This requires maintaining pointers to the nodes at the head and tail of the list
+but the memory overhead will pay for itself if this is an operation you will be
+performing many times.
+What linked lists are not very good for is random insertion, accessing nodes
+by index, and searching. At the expense of a little memory (in most cases 4
+bytes would su±ce), and a few more read/writes you could maintain a count
+variable that tracks how many items are contained in the list so that accessing
+such a primitive property is a constant operation - you just need to update
+count during the insertion and deletion algorithms.
+Singly linked lists should be used when you are only performing basic in-
+sertions. In general doubly linked lists are more accommodating for non-trivial
+operations on a linked list.
+We recommend the use of a doubly linked list when you require forwards
+and backwards traversal. For the most cases this requirement is present. For
+example, consider a token stream that you want to parse in a recursive descent
+fashion. Sometimes you will have to backtrack in order to create the correct
+parse tree. In this scenario a doubly linked list is best as its design makes
+bi-directional traversal much simpler and quicker than that of a singly linked list.
+Binary Search Tree
+Binary search trees (BSTs) are very simple to understand. We start with a root
+node with value x, where the left subtree of x contains nodes with values < x
+and the right subtree contains nodes whose values are ¸ x. Each node follows
+the same rules with respect to nodes in their left and right subtrees.
+BSTs are of interest because they have operations which are favourably fast:
+insertion, look up, and deletion can all be done in O(log n) time. It is important
+to note that the O(log n) times for these operations can only be attained if
+the BST is reasonably balanced; for a tree data structure with self balancing
+properties see AVL tree de¯ned in x7).
+In the following examples you can assume, unless used as a parameter alias
+that root is a reference to the root node of the tree. The insertion algorithm is split for a good reason. The ¯rst algorithm (non-
+recursive) checks a very core base case - whether or not the tree is empty. If
+the tree is empty then we simply create our root node and ¯nish. In all other
+cases we invoke the recursive InsertNode algorithm which simply guides us to
+the ¯rst appropriate place in the tree to put value. Note that at each stage we
+perform a binary chop: we either choose to recurse into the left subtree or the
+right by comparing the new value with that of the current node. For any totally
+ordered type, no value can simultaneously satisfy the conditions to place it in
+both subtrees. Searching
+Searching a BST is even simpler than insertion. The pseudocode is self-explanatory
+but we will look brie°y at the premise of the algorithm nonetheless.
+We have talked previously about insertion, we go either left or right with the
+right subtree containing values that are ¸ x where x is the value of the node
+we are inserting. When searching the rules are made a little more atomic and
+at any one time we have four cases to consider:
+3.3 Deletion
+Removing a node from a BST is fairly straightforward, with four cases to con-
+sider:
+1. the value to remove is a leaf node; or
+2. the value to remove has a right subtree, but no left subtree; or
+3. the value to remove has a left subtree, but no right subtree; or
+4. the value to remove has both a left and right subtree in which case we
+promote the largest value in the left subtree.
+There is also an implicit ¯fth case whereby the node to be removed is the
+only node in the tree. This case is already covered by the ¯rst, but should be
+noted as a possibility nonetheless.
+Of course in a BST a value may occur more than once. In such a case the
+¯rst occurrence of that value in the BST will be removed.
+3.4 Finding the parent of a given node
+The purpose of this algorithm is simple - to return a reference (or pointer) to
+the parent node of the one with the given value. We have found that such an
+algorithm is very useful, especially when performing extensive tree transforma-
+tions. A special case in the above algorithm is when the speci¯ed value does not
+exist in the BST, in which case we return ;. Callers to this algorithm must take
+account of this possibility unless they are already certain that a node with the
+speci¯ed value exists.
+3.5 Attaining a reference to a node
+This algorithm is very similar to x3.4, but instead of returning a reference to the
+parent of the node with the speci¯ed value, it returns a reference to the node
+itself. Again, ; is returned if the value isn't found. Astute readers will have noticed that the FindNode algorithm is exactly the
+same as the Contains algorithm (de¯ned in x3.2) with the modi¯cation that
+we are returning a reference to a node not true or false. Given FindNode,
+the easiest way of implementing Contains is to call FindNode and compare the
+return value with ;.
+3.6 Finding the smallest and largest values in
+the binary search tree
+To ¯nd the smallest value in a BST you simply traverse the nodes in the left
+subtree of the BST always going left upon each encounter with a node, termi-
+nating when you ¯nd a node with no left subtree. The opposite is the case when
+¯nding the largest value in the BST. Both algorithms are incredibly simple, and
+are listed simply for completeness.
+The base case in both FindMin, and FindMax algorithms is when the Left
+(FindMin), or Right (FindMax) node references are ; in which case we have
+reached the last node.
+3.7 Tree Traversals
+There are various strategies which can be employed to traverse the items in a
+tree; the choice of strategy depends on which node visitation order you require.
+In this section we will touch on the traversals that DSA provides on all data
+structures that derive from BinarySearchT ree.
+3.7.1 Preorder
+When using the preorder algorithm, you visit the root ¯rst, then traverse the left
+subtree and ¯nally traverse the right subtree. An example of preorder traversal
+3.7.2 Postorder
+This algorithm is very similar to that described in x3.7.1, however the value
+of the node is yielded after traversing both subtrees
+3.7.3 Inorder
+Another variation of the algorithms de¯ned in x3.7.1 and x3.7.2 is that of inorder
+traversal where the value of the current node is yielded in between traversing
+the left subtree and the right subtree. One of the beauties of inorder traversal is that values are yielded in their
+comparison order. In other words, when traversing a populated BST with the
+inorder strategy, the yielded sequence would have property xi · xi+18i.
+3.7.4 Breadth First
+Traversing a tree in breadth ¯rst order yields the values of all nodes of a par-
+ticular depth in the tree before any deeper ones. In other words, given a depth
+d we would visit the values of all nodes at d in a left to right fashion, then we
+would proceed to d + 1 and so on until we hade no more nodes to visit. An
+example of breadth ¯rst traversal is shown in Figure 3.6.
+Traditionally breadth ¯rst traversal is implemented using a list (vector, re-
+sizeable array, etc) to store the values of the nodes visited in breadth ¯rst order
+and then a queue to store those nodes that have yet to be visited.
+3.8 Summary
+A binary search tree is a good solution when you need to represent types that are
+ordered according to some custom rules inherent to that type. With logarithmic
+insertion, lookup, and deletion it is very e®ecient. Traversal remains linear, but
+there are many ways in which you can visit the nodes of a tree. Trees are
+recursive data structures, so typically you will ¯nd that many algorithms that
+operate on a tree are recursive.
+The run times presented in this chapter are based on a pretty big assumption
+- that the binary search tree's left and right subtrees are reasonably balanced.
+We can only attain logarithmic run times for the algorithms presented earlier
+when this is true. A binary search tree does not enforce such a property, and
+the run times for these operations on a pathologically unbalanced tree become
+linear: such a tree is e®ectively just a linked list. Later in x7 we will examine
+an AVL tree that enforces self-balancing properties to help attain logarithmic
+run times.
+
+Heap
+A heap can be thought of as a simple tree data structure, however a heap usually
+employs one of two strategies:
+1. min heap; or
+2. max heap
+Each strategy determines the properties of the tree and its values. If you
+were to choose the min heap strategy then each parent node would have a value
+that is · than its children. For example, the node at the root of the tree will
+have the smallest value in the tree. The opposite is true for the max heap
+strategy. In this book you should assume that a heap employs the min heap
+strategy unless otherwise stated.
+Unlike other tree data structures like the one de¯ned in x3 a heap is generally
+implemented as an array rather than a series of nodes which each have refer-
+ences to other nodes. The nodes are conceptually the same, however, having at
+most two children. Figure 4.1 shows how the tree (not a heap data structure)
+(12 7(3 2) 6(9 )) would be represented as an array. The array in Figure 4.1 is a
+result of simply adding values in a top-to-bottom, left-to-right fashion. Figure
+4.2 shows arrows to the direct left and right child of each value in the array.
+This chapter is very much centred around the notion of representing a tree as
+an array and because this property is key to understanding this chapter Figure
+4.3 shows a step by step process to represent a tree data structure as an array.
+In Figure 4.3 you can assume that the default capacity of our array is eight.
+Using just an array is often not su±cient as we have to be up front about the
+size of the array to use for the heap. Often the run time behaviour of a program
+can be unpredictable when it comes to the size of its internal data structures,
+so we need to choose a more dynamic data structure that contains the following
+properties:
+1. we can specify an initial size of the array for scenarios where we know the
+upper storage limit required; and
+2. the data structure encapsulates resizing algorithms to grow the array as
+required at run time
+1. Vector
+2. ArrayList
+3. List
+Figure 4.1 does not specify how we would handle adding null references to
+the heap. This varies from case to case; sometimes null values are prohibited
+entirely; in other cases we may treat them as being smaller than any non-null
+value, or indeed greater than any non-null value. You will have to resolve this
+ambiguity yourself having studied your requirements. For the sake of clarity we
+will avoid the issue by prohibiting null values.
+Because we are using an array we need some way to calculate the index of a
+parent node, and the children of a node. The required expressions for this are
+de¯ned as follows for a node at index:
+1. (index ¡ 1)/2 (parent index)
+2. 2 ¤ index + 1 (left child)
+3. 2 ¤ index + 2 (right child)
+In Figure 4.4 a) represents the calculation of the right child of 12 (2 ¤ 0+2);
+and b) calculates the index of the parent of 3 ((3 ¡ 1)/2).
+4.1 Insertion
+Designing an algorithm for heap insertion is simple, but we must ensure that
+heap order is preserved after each insertion. Generally this is a post-insertion
+operation. Inserting a value into the next free slot in an array is simple: we just
+need to keep track of the next free index in the array as a counter, and increment
+it after each insertion. Inserting our value into the heap is the ¯rst part of the
+algorithm; the second is validating heap order. In the case of min-heap ordering
+this requires us to swap the values of a parent and its child if the value of the
+child is < the value of its parent. We must do this for each subtree containing
+the value we just inserted.
+The design of the MaxHeapify algorithm is very similar to that of the Min-
+Heapify algorithm, the only di®erence is that the < operator in the second
+condition of entering the while loop is changed to >
+4.2 Deletion
+Just as for insertion, deleting an item involves ensuring that heap ordering is
+preserved. The algorithm for deletion has three steps:
+1. ¯nd the index of the value to delete
+2. put the last value in the heap at the index location of the item to delete
+3. verify heap ordering for each subtree which used to include the value
+Figure 4.6 shows the Remove algorithm visually, removing 1 from a heap
+containing the values 1, 3, 9, 12, and 13. In Figure 4.6 you can assume that we
+have speci¯ed that the backing array of the heap should have an initial capacity
+of eight.
+Please note that in our deletion algorithm that we don't default the removed
+value in the heap array. If you are using a heap for reference types, i.e. objects
+that are allocated on a heap you will want to free that memory. This is important
+in both unmanaged, and managed languages. In the latter we will want to null
+that empty hole so that the garbage collector can reclaim that memory. If we
+were to not null that hole then the object could still be reached and thus won't
+be garbage collected.
+4.3 Searching
+Searching a heap is merely a matter of traversing the items in the heap array
+sequentially, so this operation has a run time complexity of O(n). The search
+can be thought of as one that uses a breadth ¯rst traversal as de¯ned in x3.7.4
+to visit the nodes within the heap to check for the presence of a speci¯ed item.The problem with the previous algorithm is that we don't take advantage
+of the properties in which all values of a heap hold, that is the property of the
+heap strategy being used. For instance if we had a heap that didn't contain the
+value 4 we would have to exhaust the whole backing heap array before we could
+determine that it wasn't present in the heap. Factoring in what we know about
+the heap we can optimise the search algorithm by including logic which makes
+use of the properties presented by a certain heap strategy.
+Optimising to deterministically state that a value is in the heap is not that
+straightforward, however the problem is a very interesting one. As an example
+consider a min-heap that doesn't contain the value 5. We can only rule that the
+value is not in the heap if 5 > the parent of the current node being inspected
+and < the current node being inspected 8 nodes at the current level we are
+traversing. If this is the case then 5 cannot be in the heap and so we can
+provide an answer without traversing the rest of the heap. If this property is
+not satis¯ed for any level of nodes that we are inspecting then the algorithm
+will indeed fall back to inspecting all the nodes in the heap. The optimisation
+that we present can be very common and so we feel that the extra logic within
+the loop is justi¯ed to prevent the expensive worse case run time.
+The following algorithm is speci¯cally designed for a min-heap. To tailor the
+algorithm for a max-heap the two comparison operations in the else if condition
+within the inner while loop should be °ipped. The new Contains algorithm determines if the value is not in the heap by
+checking whether count = nodes. In such an event where this is true then we
+can con¯rm that 8 nodes n at level i : value > Parent(n), value < n thus there
+is no possible way that value is in the heap. As an example consider Figure 4.7.
+If we are searching for the value 10 within the min-heap displayed it is obvious
+that we don't need to search the whole heap to determine 9 is not present. We
+can verify this after traversing the nodes in the second level of the heap as the
+previous expression de¯ned holds true.
+4.4 Traversal
+As mentioned in x4.3 traversal of a heap is usually done like that of any other
+array data structure which our heap implementation is based upon. As a result
+you traverse the array starting at the initial array index (0 in most languages)
+and then visit each value within the array until you have reached the upper
+bound of the heap. You will note that in the search algorithm that we use Count
+as this upper bound rather than the actual physical bound of the allocated
+array. Count is used to partition the conceptual heap from the actual array
+implementation of the heap: we only care about the items in the heap, not the
+whole array|the latter may contain various other bits of data as a result of
+heap mutation.
+If you have followed the advice we gave in the deletion algorithm then a
+heap that has been mutated several times will contain some form of default
+value for items no longer in the heap. Potentially you will have at most
+LengthOf(heapArray)¡Count garbage values in the backing heap array data
+structure. The garbage values of course vary from platform to platform. To
+make things simple the garbage value of a reference type will be simple ; and 0
+for a value type.
+Figure 4.8 shows a heap that you can assume has been mutated many times.
+For this example we can further assume that at some point the items in indexes
+3 ¡ 5 actually contained references to live objects of type T. In Figure 4.8
+subscript is used to disambiguate separate objects of T.
+From what you have read thus far you will most likely have picked up that
+traversing the heap in any other order would be of little bene¯t. The heap
+property only holds for the subtree of each node and so traversing a heap in
+any other fashion requires some creative intervention. Heaps are not usually
+traversed in any other way than the one prescribed previously.
+4.5 Summary
+Heaps are most commonly used to implement priority queues (see x6.2 for a
+sample implementation) and to facilitate heap sort. As discussed in both the
+insertion x4.1 and deletion x4.2 sections a heap maintains heap order according
+to the selected ordering strategy. These strategies are referred to as min-heap,and max heap. The former strategy enforces that the value of a parent node is
+less than that of each of its children, the latter enforces that the value of the
+parent is greater than that of each of its children.
+When you come across a heap and you are not told what strategy it enforces
+you should assume that it uses the min-heap strategy. If the heap can be
+con¯gured otherwise, e.g. to use max-heap then this will often require you to
+state this explicitly. The heap abides progressively to a strategy during the
+invocation of the insertion, and deletion algorithms. The cost of such a policy is
+that upon each insertion and deletion we invoke algorithms that have logarithmic
+run time complexities. While the cost of maintaining the strategy might not
+seem overly expensive it does still come at a price. We will also have to factor
+in the cost of dynamic array expansion at some stage. This will occur if the
+number of items within the heap outgrows the space allocated in the heap's
+backing array. It may be in your best interest to research a good initial starting
+size for your heap array. This will assist in minimising the impact of dynamic
+array resizing.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

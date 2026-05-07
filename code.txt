@@ -401,7 +401,7 @@ TOOLS = {
 }
 memory = ChatMemory()
 memory.prepare_document(
-    path=r"E:\training\LLM_training\output.md",
+    path=r"E:\training\LLM_training\data\final_cleadn_data.md",
     size=200,
     overlap=50)
 #print("BM25 result:", memory.loader.bm25.search("binary search"))
@@ -415,3 +415,9 @@ while True:
         break
     reply = memory.chat(user)
     print("qwen2.5:", reply)
+ Capital of India
+ Time complexity answered without retrieval
+ What does the document say about time complexity?
+ Explain binary search from the document and calculate the maximum number of steps for 1024 elements.
+ What did we discuss so far?
+ Compare stack and queue from the document and tell which one is better for recursion.
