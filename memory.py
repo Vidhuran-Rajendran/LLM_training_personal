@@ -165,10 +165,12 @@ class ChatMemory:
     # ---------------- RETRIEVAL ----------------    
     #retriving the context where it is availabe in the doc or not
     def retrive_context(self,user_text):
+        history_text = " ".join([m["content"]for  m in list(self.chat_history)[-3:]])
         
-        embedded_user = self.embed(user_text)
+        full_query = history_text + " " + user_text
+        embedded_user = self.embed(full_query)
         chroma_chunks  = self.loader.top_3_chunks(embedded_user)
-        bm25_chunks = self.loader.bm25.search(user_text, top_k=3)
+        bm25_chunks = self.loader.bm25.search(full_query, top_k=3)
 
         #print("BM25 Chunks:", bm25_chunks)
         #print("Chroma Chunks:", chroma_chunks)
@@ -178,7 +180,7 @@ class ChatMemory:
         if not top_chunks:
             return "No Context Found"
         
-        combined = " ".join (top_chunks)
+        #combined = " ".join (top_chunks)
         # if len(combined.split())<15:
         #     return "No Context Found"
         #print("DEBUG:", top_chunks)
@@ -196,6 +198,10 @@ class ChatMemory:
         while self.total_tokens()>self.max_tokens:
             del self.chat_history[1]
             del self.chat_history[1]
+    
+    def trim_history(self):
+        while len(self.chat_history)>10:
+            self.chat_history.popleft()
             
     # ---------------- HISTORY ----------------     
     #adding user input & reply to the history 
@@ -254,51 +260,36 @@ class ChatMemory:
     def react_chat(self,user_input):
     
         context = """
-        You are a ReAct agent.
+You are a ReAct agent.
 
-        You MUST follow this format exactly:
+You MUST follow this format:
 
-        Thought: describe your reasoning
-        Action: tool_name("input")
-        Observation: result from the tool
-        (repeat if needed)
-        Final Answer: your final answer
+Thought: reasoning step
+Action: tool_name("input")
+Observation: result
+Final Answer: answer
 
-        STRICT RULES:
-        You MUST ALWAYS respond with Thought and Action BEFORE Final Answer.
-        If you do not follow this, your response is INVALID.
-        For every question, your FIRST step MUST be an Action.
-        ``
-        - Answer ONLY using the information present in the DOCUMENT CONTEXT.
-        - You are NOT allowed to answer from your own knowledge.
-        - You are FORBIDDEN from using your own knowledge.
-        - You are FORBIDDEN from using “general knowledge”.
-        - You MUST use tools to obtain information before answering.
-        - For ANY question about algorithms, data structures, or explanations,
-        you MUST first use the search action to consult the document.
-        - If a question cannot be answered using tools,
-        reply EXACTLY:
-        "Context not available in the provided document."
-        - If the user asks about conversation history,
-        you MUST use the history action.
-        - NEVER explain using phrases like:
-        "from general knowledge"
-        "based on my knowledge"
-        "I know that"
-        - For algorithm or data-structure questions:
-        You MUST use the search action first.
-        - For math questions:
-        You MUST use the calculate action.
-        - For conversation questions:
-        You MUST use the history action.
-        - Use ONE action at a time
-        - Answer ONLY using the information present in the DOCUMENT CONTEXT.
-        - Do NOT add new knowledge.
-        - Do NOT infer beyond the document.
-        - NEVER invent observation
+INSTRUCTIONS:
 
+- Always try to use the search tool FIRST for any data structure or algorithm question.
+- Use the information returned by the tool as your primary source.
+- If the retrieved context is relevant, use it to answer clearly.
+- If the context is PARTIAL, still answer using the best available information.
+- Only say "Context not available in the provided document." 
+  if no useful context is found at all.
 
-        """
+RULES:
+
+- Prefer using the search tool.
+- Do NOT skip calling a tool.
+- Do NOT invent observations.
+- Use ONE action at a time.
+- Keep answers concise and based on context.
+
+"""
+
+        history = "\n".join([f"{m['role']}: {m['content']}" for m in list(self.chat_history)])
+        context += f"\nConversation History:\n{history}\n"
         context += f"\nUser Question: {user_input}\n"
 
         action_used = False
@@ -334,13 +325,21 @@ class ChatMemory:
             # ✅ Enforce rule on Final Answer
             if "Final Answer:" in response:
                 if not action_used:
-                    return "Context not available in the provided document."
+                    observation = self.execute_action(f'search("{user_input}")')
+                    return observation
                 return response.split("Final Answer:")[-1].strip()
+            
+            # ✅ final fallback (IMPORTANT)
+            fallback = self.retrive_context(user_input)
+
+            if fallback and fallback != "No Context Found":
+                return fallback
 
         return "Context not available in the provided document."
     
     # ---------------- MAIN ENTRY ----------------
     def chat(self,user_):
+        self.trim_history()
         normalized = self.normalize(user_)
         self.chat_history.append({"role":"user","content":user_})
         self.trim_to_budget()
