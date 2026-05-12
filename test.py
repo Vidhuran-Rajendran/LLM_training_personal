@@ -97,14 +97,25 @@ class DocumentLoader:
         return self.text
 
     def chunks_creation(self, size=500, overlap=100):
-        # FIX: split on both # and ## headings (was only splitting on \n## )
-        sections = re.split(r'\n?=#{1,2} ', self.text)
         self.chunks = []
+        # Step 1: split by markdown headings
+        sections = re.split(r'\n(?=#{1,2} )', self.text)
         for sec in sections:
             sec = sec.strip()
-            sec = re.sub(r'\n---+\n?','\n',sec).strip()  # remove markdown separators
-            if len(sec) > 30:  # FIX: lowered from 50 — less aggressive filtering
+            sec = re.sub(r'\n---+\n?', '\n', sec).strip()
+            if len(sec) < 30:
+                continue
+            # Step 2: if section is small enough, keep as one chunk
+            if len(sec.split()) <= size:
                 self.chunks.append(sec)
+            else:
+                # Step 3: apply sliding window for large sections
+                words = sec.split()
+                start = 0
+                while start < len(words):
+                    chunk = " ".join(words[start:start + size])
+                    self.chunks.append(chunk)
+                    start += size - overlap
         return self.chunks
     
     def embed_all_chunks(self, embed_fn):
