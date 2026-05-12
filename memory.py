@@ -6,10 +6,12 @@ import math
 from math import sqrt
 import ollama
 import re
-
+import shutil,os
+if os.path.exists("./vectorstore"):
+    shutil.rmtree("./vectorstore")
 class VectorStore:
     def __init__(self,path = ".\vectorstore",collection_name ="dsa_docs"):
-        self.client = chromadb.Client(chromadb.config.Settings(persist_directory=path,anonymized_telemetry=False))
+        self.client = chromadb.PersistentClient(path=path)
         self.collection = self.client.get_or_create_collection(name=collection_name)
     
     def add_chunks(self,chunks,embed_fn):
@@ -91,22 +93,13 @@ class DocumentLoader():
         return self.text
     
     def chunks_creation(self, size=500, overlap=100):
-        sentences = re.split(r'(?<=[.!?]) +', self.text)
-        sections = re.split(r'\n## ', self.text)
+        # Split on any markdown heading (# or ##)
+        sections = re.split(r'\n#{1,2} ', self.text)
         self.chunks = []
-        chunk = ""
         for sec in sections:
             sec = sec.strip()
-            if len(sec)>50:
+            if len(sec) > 30:  # lower threshold — 50 was too strict
                 self.chunks.append(sec)
-        # for sentence in sentences:
-        #     if len(chunk.split()) + len(sentence.split()) <= size:
-        #         chunk += " " + sentence
-        #     else:
-        #         self.chunks.append(chunk.strip())
-        #         chunk = sentence
-        # if chunk:
-        #     self.chunks.append(chunk.strip())   
         return self.chunks
     
     def embed_all_chunks(self,embed_fn):
