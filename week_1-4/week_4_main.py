@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from memory import ChatMemory   # 🔁 change to your filename
+from week_5.memory_week_5 import ChatMemory   # 🔁 change to your filename
 
 # ✅ create app
 app = FastAPI()

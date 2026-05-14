@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from memory_week_5 import ChatMemory   # 🔁 change to your filename
+from week_6.memory_w6d1 import ChatMemory   # 🔁 change to your filename
 
 test_cases = [
     {

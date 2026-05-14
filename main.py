@@ -2,8 +2,13 @@ from fastapi import FastAPI, HTTPException
 import time
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
-from memory_week_5 import ChatMemory   # 🔁 change to your filename
+from memory_w6d2 import ChatMemory   # 🔁 change to your filename
 
+
+memory = ChatMemory()
+memory.prepare_document("E:\\training\\LLM_training\\data\\final_clean_data.md",
+                        size=500,
+                        overlap=100)
 test_cases = [
     {
         "question": "What is AVL tree?",
@@ -20,7 +25,6 @@ test_cases = [
 ]
 
 def evaluate(bot, question, expected):
-
     response = bot.chat(question)
 
     print("\nQ:", question)
@@ -29,6 +33,7 @@ def evaluate(bot, question, expected):
     if expected.lower() in response.lower():
         return 1
     return 0
+
 def run_tests(bot):
 
     correct = 0
@@ -62,13 +67,7 @@ class ChatResponse(BaseModel):
 
 def get_session(user_id):
     if user_id not in sessions:
-        bot = ChatMemory()
-        bot.prepare_document(
-            path=r"E:\training\LLM_training\data\final_clean_data.md",
-            size=500,
-            overlap=100
-        )
-        sessions[user_id] = bot
+        sessions[user_id] = memory
     return sessions[user_id]
 
 # ✅ main endpoint
@@ -89,7 +88,7 @@ async def chat_stream_endpoint(req: ChatRequest):
         for word in full_reply.split():
             token = word + " "
             collected += token
-            yield collected
+            yield token
             time.sleep(0.2)  # simulate delay
             
         bot = get_session(req.user_id)
