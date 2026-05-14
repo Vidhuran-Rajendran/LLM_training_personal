@@ -6,9 +6,23 @@ import math
 from math import sqrt
 import ollama
 import re
+from groq import Groq
 import shutil,os
 if os.path.exists("./vectorstore"):
     shutil.rmtree("./vectorstore")
+    
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def call_groq(messages, model="llama3-8b-8192"):
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        max_tokens=800
+    )
+
+    return response.choices[0].message.content
+
 class VectorStore:
     def __init__(self,path = ".\vectorstore",collection_name ="dsa_docs"):
         self.client = chromadb.PersistentClient(path=path)

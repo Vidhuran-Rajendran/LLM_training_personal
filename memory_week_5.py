@@ -409,7 +409,7 @@ if __name__ == "__main__":
     memory = ChatMemory()
 
     memory.prepare_document(
-        path=r"E:\training\LLM_training\data\final_cleadn_data.md",
+        path=r"E:\training\LLM_training\data\final_clean_data.md",
         size=500,
         overlap=100
     )

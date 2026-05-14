@@ -1,7 +1,5 @@
 from fastapi import FastAPI, HTTPException
-import time
 from pydantic import BaseModel
-from fastapi.responses import StreamingResponse
 from memory_week_5 import ChatMemory   # 🔁 change to your filename
 
 test_cases = [
@@ -72,34 +70,20 @@ def get_session(user_id):
     return sessions[user_id]
 
 # ✅ main endpoint
-# @app.post("/chat")
-# async def chat_endpoint(req: ChatRequest):
-#     try:
-#         bot = get_session(req.user_id)
-#         reply = bot.chat(req.message)
-#         return{"reply": reply}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post("/chat/stream")
-async def chat_stream_endpoint(req: ChatRequest):
-    def generate():
-        full_reply = f"Streaming response for : {req.message}"
-        collected = ""
-        for word in full_reply.split():
-            token = word + " "
-            collected += token
-            yield collected
-            time.sleep(0.2)  # simulate delay
-            
+@app.post("/chat")
+async def chat_endpoint(req: ChatRequest):
+    try:
         bot = get_session(req.user_id)
-        bot.chat_history.append({"role":"assistant", "content":collected})
-        
-    return StreamingResponse(generate(), media_type="text/plain")
-            
-            
+        reply = bot.chat(req.message)
+        return{"reply": reply}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # @app.get("/evaluate")
 # async def evaluate_system():
+
 #     bot = get_session("test_user")   # fixed test session
+
 #     result = run_tests(bot)
+
 #     return result
