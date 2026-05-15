@@ -3,7 +3,7 @@ import time
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from memory_w6d2 import ChatMemory   # 🔁 change to your filename
-
+import httpx
 
 memory = ChatMemory()
 memory.prepare_document("E:\\training\\LLM_training\\data\\final_clean_data.md",
@@ -67,7 +67,7 @@ class ChatResponse(BaseModel):
 
 def get_session(user_id):
     if user_id not in sessions:
-        sessions[user_id] = memory
+        sessions[user_id] = ChatMemory()
     return sessions[user_id]
 
 # ✅ main endpoint
@@ -79,26 +79,39 @@ def get_session(user_id):
 #         return{"reply": reply}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
-    
-@app.post("/chat/stream")
-async def chat_stream_endpoint(req: ChatRequest):
-    def generate():
-        full_reply = f"Streaming response for : {req.message}"
-        collected = ""
-        for word in full_reply.split():
-            token = word + " "
-            collected += token
-            yield token
-            time.sleep(0.2)  # simulate delay
-            
+
+
+async def async_ollama_chat(model, messages):
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            "http://localhost:11434/api/chat",
+            json={
+                "model": model,
+                "messages": messages,
+                "stream": False
+            }
+            )
+        return response.json()["message"]["content"]
+
+
+@app.post("/chat")
+async def chat_endpoint(req: ChatRequest):
+    try:
         bot = get_session(req.user_id)
-        bot.chat_history.append({"role":"assistant", "content":collected})
-        
-    return StreamingResponse(generate(), media_type="text/plain")
-            
-            
-# @app.get("/evaluate")
-# async def evaluate_system():
-#     bot = get_session("test_user")   # fixed test session
-#     result = run_tests(bot)
-#     return result
+
+        # ✅ prepare messages (VERY IMPORTANT)
+        messages = list(bot.chat_history) + [
+            {"role": "user", "content": req.message}
+        ]
+
+        # ✅ async call
+        reply = await async_ollama_chat(memory.model, messages)
+
+        # ✅ store history
+        bot.chat_history.append({"role": "user", "content": req.message})
+        bot.chat_history.append({"role": "assistant", "content": reply})
+
+        return {"reply": reply}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -3,7 +3,7 @@ import time
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from memory_w6d2 import ChatMemory   # 🔁 change to your filename
-
+import httpx
 
 memory = ChatMemory()
 memory.prepare_document("E:\\training\\LLM_training\\data\\final_clean_data.md",
@@ -79,6 +79,7 @@ def get_session(user_id):
 #         return{"reply": reply}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
     
 @app.post("/chat/stream")
 async def chat_stream_endpoint(req: ChatRequest):
